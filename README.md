@@ -24,7 +24,7 @@
 
 ## 🌐 Live Demo
 
-> 🔗 **[https://your-demo-link.com](https://pharma-gaurd.vercel.app/)**
+> 🔗 **[https://pharma-gaurd.vercel.app/](https://pharma-gaurd.vercel.app/)**
 
 ---
 
