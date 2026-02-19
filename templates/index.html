@@ -68,6 +68,7 @@
             min-height: 100vh;
             padding: 20px;
             transition: background 0.3s ease;
+            overflow-x: hidden;
         }
         
         .container {
@@ -78,6 +79,10 @@
             box-shadow: var(--shadow);
             overflow: hidden;
             transition: all 0.3s ease;
+        }
+        
+        html {
+            scroll-behavior: smooth;
         }
         
         .header {
@@ -126,6 +131,14 @@
             opacity: 0.95;
             font-size: 15px;
             margin-bottom: 12px;
+            font-weight: 400;
+        }
+        
+        .header .clinical-positioning {
+            font-size: 13px;
+            opacity: 0.85;
+            margin-bottom: 16px;
+            font-style: italic;
             font-weight: 400;
         }
         
@@ -357,23 +370,137 @@
         
         .loading {
             display: none;
+            padding: 60px 40px;
+            min-height: 400px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading.active {
+            display: flex;
+        }
+        
+        .loading-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 48px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
             text-align: center;
-            padding: 40px;
+            max-width: 420px;
+            width: 100%;
         }
         
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+        .loader-ring {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 28px;
+            position: relative;
         }
         
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .loader-ring svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+        
+        .loader-ring circle {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+        
+        .loader-ring .ring-bg {
+            stroke: var(--border-color);
+        }
+        
+        .loader-ring .ring-progress {
+            stroke: var(--accent);
+            stroke-dasharray: 226;
+            stroke-dashoffset: 226;
+            animation: loader-progress 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 6px var(--accent));
+        }
+        
+        @keyframes loader-progress {
+            0% { stroke-dashoffset: 226; }
+            50% { stroke-dashoffset: 60; }
+            100% { stroke-dashoffset: 226; }
+        }
+        
+        .loader-status {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-height: 24px;
+            margin-bottom: 20px;
+            opacity: 1;
+            transition: opacity 0.4s ease;
+        }
+        
+        .loader-status.fade {
+            opacity: 0;
+        }
+        
+        .loader-progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+        
+        .loader-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--accent-light));
+            border-radius: 2px;
+            width: 0%;
+            animation: progress-fill 3s ease-in-out infinite;
+        }
+        
+        @keyframes progress-fill {
+            0% { width: 0%; margin-left: 0%; }
+            25% { width: 35%; margin-left: 0%; }
+            50% { width: 55%; margin-left: 20%; }
+            75% { width: 75%; margin-left: 25%; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+        
+        .loader-trust {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .loader-trust-item {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            letter-spacing: 0.3px;
+        }
+        
+        .loader-trust-item svg {
+            width: 12px;
+            height: 12px;
+            opacity: 0.7;
+        }
+        
+        @media (prefers-reduced-motion: reduce) {
+            .loader-ring .ring-progress,
+            .loader-progress-fill {
+                animation: none;
+            }
+            .loader-ring .ring-progress {
+                stroke-dashoffset: 60;
+            }
+            .loader-progress-fill {
+                width: 70% !important;
+            }
         }
         
         .result-container {
@@ -528,6 +655,26 @@
             gap: 6px;
         }
         
+        .risk-context-row {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0,0,0,0.15);
+            font-size: 13px;
+            font-weight: 500;
+            color: #1f2937;
+        }
+        
+        [data-theme="dark"] .risk-context-row {
+            color: rgba(255,255,255,0.85);
+            border-top-color: rgba(255,255,255,0.2);
+        }
+        
+        .risk-summary-banner.banner-toxic .risk-context-row,
+        .risk-summary-banner.banner-ineffective .risk-context-row {
+            color: #1f2937;
+            border-top-color: rgba(0,0,0,0.15);
+        }
+        
         .confidence-bar-container {
             width: 100%;
             max-width: 300px;
@@ -647,15 +794,30 @@
             margin-right: 4px;
         }
         
+        .clinical-disclaimer {
+            text-align: center;
+            padding: 16px 20px;
+            background: var(--card-bg-alt);
+            color: var(--text-muted);
+            font-size: 11px;
+            line-height: 1.5;
+            border-top: 1px solid var(--border-color);
+            font-style: italic;
+        }
+        
         @media (max-width: 600px) {
             .container {
                 margin: 0;
                 border-radius: 0;
                 min-height: 100vh;
+                padding-bottom: 40px;
             }
             
             body {
                 padding: 0;
+                overflow-x: hidden;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
             }
             
             .header {
@@ -685,6 +847,7 @@
             
             .form-container, .result-container {
                 padding: 15px;
+                padding-bottom: 30px;
             }
             
             .form-card {
@@ -743,6 +906,10 @@
             .action-btn {
                 width: 100%;
                 justify-content: center;
+            }
+            
+            .submit-btn {
+                margin-bottom: 20px;
             }
             
             .result-header {
@@ -1007,6 +1174,7 @@
             </button>
             <h1>Pharmacogenomics Analysis</h1>
             <p class="subtitle">Clinical decision support for drug-gene interaction assessment</p>
+            <p class="clinical-positioning">Designed for pharmacogenomic decision support in clinical and research settings.</p>
             <div class="credibility">
                 <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> VCF v4.2 compliant</span>
                 <span><svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg> CPIC-aligned</span>
@@ -1077,8 +1245,32 @@
         </div>
         
         <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>Analyzing pharmacogenomic data...</p>
+            <div class="loading-card">
+                <div class="loader-ring">
+                    <svg viewBox="0 0 80 80">
+                        <circle class="ring-bg" cx="40" cy="40" r="36"/>
+                        <circle class="ring-progress" cx="40" cy="40" r="36"/>
+                    </svg>
+                </div>
+                <div class="loader-status" id="loaderStatus">Initializing analysis...</div>
+                <div class="loader-progress-bar">
+                    <div class="loader-progress-fill"></div>
+                </div>
+                <div class="loader-trust">
+                    <span class="loader-trust-item">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+                        VCF v4.2 validated
+                    </span>
+                    <span class="loader-trust-item">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                        Local secure processing
+                    </span>
+                    <span class="loader-trust-item">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+                        CPIC-aligned
+                    </span>
+                </div>
+            </div>
         </div>
         
         <div class="error-container" id="errorContainer">
@@ -1100,9 +1292,10 @@
                     </div>
                     <div class="risk-summary-item">
                         <span>Confidence:</span>
-                        <span id="bannerConfidence"></span>
+                        <span id="bannerConfidence" title="Model confidence based on variant match strength and CPIC evidence mapping"></span>
                     </div>
                 </div>
+                <div class="risk-context-row" id="riskContextRow"></div>
                 <div class="confidence-bar-container">
                     <div class="confidence-bar" id="confidenceBar"></div>
                 </div>
@@ -1145,6 +1338,10 @@
                         <div class="result-item">
                             <span class="result-label">Detected Variants:</span>
                             <span class="result-value" id="resVariants"></span>
+                        </div>
+                        <div class="result-item">
+                            <span class="result-label">Evidence Level:</span>
+                            <span class="result-value" id="resEvidenceLevel">CPIC Level A</span>
                         </div>
                     </div>
                 </div>
@@ -1209,11 +1406,60 @@
                 <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 16h2v2h-2v-2zm0-6h2v4h-2v-4z"/></svg>
                 Recommendations aligned with CPIC pharmacogenomic guidelines.
             </div>
+            
+            <div class="clinical-disclaimer">
+                This tool provides clinical decision support based on pharmacogenomic guidelines. Final prescribing decisions must be made by qualified healthcare professionals.
+            </div>
         </div>
     </div>
 
     <script>
         const MAX_FILE_SIZE = 5 * 1024 * 1024;
+        
+        const loadingMessages = [
+            'Parsing VCF file...',
+            'Identifying pharmacogenes...',
+            'Determining star alleles...',
+            'Applying CPIC guideline rules...',
+            'Assessing phenotype status...',
+            'Evaluating clinical risk...',
+            'Generating clinical explanation...'
+        ];
+        
+        let loadingMessageIndex = 0;
+        let loadingMessageInterval = null;
+        
+        function startLoadingAnimation() {
+            const statusEl = document.getElementById('loaderStatus');
+            if (!statusEl) return;
+            
+            loadingMessageIndex = 0;
+            statusEl.textContent = loadingMessages[loadingMessageIndex];
+            
+            loadingMessageInterval = setInterval(() => {
+                const el = document.getElementById('loaderStatus');
+                if (!el) {
+                    clearInterval(loadingMessageInterval);
+                    return;
+                }
+                
+                el.classList.add('fade');
+                
+                setTimeout(() => {
+                    loadingMessageIndex = (loadingMessageIndex + 1) % loadingMessages.length;
+                    el.textContent = loadingMessages[loadingMessageIndex];
+                    el.classList.remove('fade');
+                }, 400);
+                
+            }, 1800);
+        }
+        
+        function stopLoadingAnimation() {
+            if (loadingMessageInterval) {
+                clearInterval(loadingMessageInterval);
+                loadingMessageInterval = null;
+            }
+        }
         
         const form = document.getElementById('analysisForm');
         const fileInput = document.getElementById('vcf_file');
@@ -1243,12 +1489,13 @@
             });
         }
         
-        function updateRiskSummaryBanner(riskLabel, severity, confidence) {
+        function updateRiskSummaryBanner(riskLabel, severity, confidence, gene, phenotype) {
             const banner = document.getElementById('riskSummaryBanner');
             const label = document.getElementById('riskSummaryLabel');
             const sevEl = document.getElementById('bannerSeverity');
             const confEl = document.getElementById('bannerConfidence');
             const confBar = document.getElementById('confidenceBar');
+            const contextRow = document.getElementById('riskContextRow');
             
             banner.className = 'risk-summary-banner banner-' + riskLabel.toLowerCase().replace(' ', '');
             label.innerHTML = getRiskIcon(riskLabel) + ' ' + riskLabel + ' RISK';
@@ -1258,6 +1505,13 @@
             
             const confValue = (confidence ?? 0).toFixed(2);
             confEl.textContent = confValue;
+            
+            if (gene || phenotype) {
+                contextRow.textContent = `Primary Gene: ${gene || 'N/A'} | Phenotype: ${phenotype || 'Unknown'}`;
+                contextRow.style.display = 'block';
+            } else {
+                contextRow.style.display = 'none';
+            }
             
             confBar.className = 'confidence-bar bar-' + riskLabel.toLowerCase().replace(' ', '');
             setTimeout(() => {
@@ -1378,7 +1632,8 @@
             formContainer.style.display = 'none';
             resultContainer.style.display = 'none';
             errorContainer.style.display = 'none';
-            loading.style.display = 'block';
+            loading.classList.add('active');
+            startLoadingAnimation();
             submitBtn.disabled = true;
 
             try {
@@ -1389,7 +1644,8 @@
 
                 const data = await response.json();
 
-                loading.style.display = 'none';
+                stopLoadingAnimation();
+                loading.classList.remove('active');
                 submitBtn.disabled = false;
 
                 if (!response.ok) {
@@ -1406,7 +1662,8 @@
                 displayResult(data);
 
             } catch (error) {
-                loading.style.display = 'none';
+                stopLoadingAnimation();
+                loading.classList.remove('active');
                 submitBtn.disabled = false;
                 errorContainer.style.display = 'block';
                 errorMessage.innerHTML = 'Network error: ' + error.message + '<div class="error-code">Error code: NETWORK_ERROR</div>';
@@ -1448,8 +1705,10 @@
             const riskLabel = data.risk_assessment?.risk_label || 'Unknown';
             const severity = data.risk_assessment?.severity || 'none';
             const confidence = data.risk_assessment?.confidence_score ?? 0;
+            const gene = data.pharmacogenomic_profile?.primary_gene || '';
+            const phenotype = data.pharmacogenomic_profile?.phenotype || '';
             
-            updateRiskSummaryBanner(riskLabel, severity, confidence);
+            updateRiskSummaryBanner(riskLabel, severity, confidence, gene, phenotype);
             
             document.getElementById('resGene').textContent = 
                 data.pharmacogenomic_profile?.primary_gene || '';
@@ -1489,7 +1748,7 @@
             const severity = data.risk_assessment?.severity || 'none';
             const confidence = data.risk_assessment?.confidence_score ?? 0;
             
-            updateRiskSummaryBanner(riskLabel, severity, confidence);
+            updateRiskSummaryBanner(riskLabel, severity, confidence, '', '');
             
             const fullExplanation = data.llm_generated_explanation?.summary || '';
             document.getElementById('resExplanationSummary').textContent = 'Clinical Summary: ' + extractSummary(fullExplanation);
