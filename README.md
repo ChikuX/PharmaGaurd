@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  👤 <strong>Team:</strong> Neuron.dev &nbsp;|&nbsp; 🧑‍💻 <strong>Team :</strong> Ankit Kumar (Leader) <br>
+  👤 <strong>Team Name:</strong> Neuron.dev &nbsp;|&nbsp; 🧑‍💻 <strong>Team :</strong> Ankit Kumar (Leader) <br>
   Mukesh Kumar <br>
   Deepa Tiwari <br>
   Abhisek Kumar <br>
