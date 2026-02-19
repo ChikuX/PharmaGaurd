@@ -898,6 +898,7 @@ body {
 
 .result-item {
     display: flex;
+    gap: 12px;
     margin-bottom: 8px;
 }
 
@@ -909,6 +910,7 @@ body {
 
 .result-value {
     color: var(--text-primary);
+    flex: 1;
 }
 
 /* Risk Badges (Detail) */
