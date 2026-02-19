@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Results - Pharmacogenomics{% endblock %}
+
+{% block body_start %}
+<!-- Loading Overlay (hidden by default since we have results) -->
+<div class="loading" id="loading">
+    <div class="loading-card">
+        <div class="loader-ring">
+            <svg viewBox="0 0 80 80">
+                <circle class="ring-bg" cx="40" cy="40" r="36" />
+                <circle class="ring-progress" cx="40" cy="40" r="36" />
+            </svg>
+        </div>
+        <div class="loader-status" id="loaderStatus">Loading results...</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1>Pharmacogenomics Analysis Report</h1>
+    <p class="subtitle">Clinical decision support for drug-gene interaction assessment</p>
+</div>
+
+<div class="page-content">
+    <div class="error-container" id="errorContainer">
+        <div class="error-message" id="errorMessage"></div>
+    </div>
+
+    <div class="result-container" id="resultContainer" style="display: none;">
+        <div class="result-header">
+            <span>Analysis Complete</span>
+            {% if from_history %}
+            <a href="{{ url_for('history') }}" class="btn-back-header">Back to History</a>
+            {% else %}
+            <a href="{{ url_for('dashboard') }}" class="btn-back-header">Back to Dashboard</a>
+            {% endif %}
+        </div>
+
+        <div class="risk-summary-banner" id="riskSummaryBanner">
+            <div class="risk-summary-label" id="riskSummaryLabel"></div>
+            <div class="risk-summary-details">
+                <div class="risk-summary-item">
+                    <span>Severity:</span>
+                    <span id="bannerSeverity"></span>
+                </div>
+                <div class="risk-summary-item">
+                    <span>Confidence:</span>
+                    <span id="bannerConfidence"
+                        title="Model confidence based on variant match strength and CPIC evidence mapping"></span>
+                </div>
+            </div>
+            <div class="risk-context-row" id="riskContextRow"></div>
+            <div class="confidence-bar-container">
+                <div class="confidence-bar" id="confidenceBar"></div>
+            </div>
+        </div>
+
+        <div class="compact-result-section">
+            <div class="result-item">
+                <span class="result-label">Patient ID:</span>
+                <span class="result-value" id="resPatientId"></span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Drug:</span>
+                <span class="result-value" id="resDrug"></span>
+            </div>
+            <div class="result-item">
+                <span class="result-label">Timestamp:</span>
+                <span class="result-value" id="resTimestamp"></span>
+            </div>
+        </div>
+
+        <div class="collapsible-section" id="pgxProfileSection">
+            <div class="collapsible-header" onclick="toggleSection(this)">
+                <h3>Pharmacogenomic Profile <span class="hint">(Click to expand)</span></h3>
+                <span class="collapsible-icon">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <div class="result-section">
+                    <div class="result-item">
+                        <span class="result-label">Primary Gene:</span>
+                        <span class="result-value" id="resGene"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Phenotype:</span>
+                        <span class="result-value" id="resPhenotype"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Diplotype:</span>
+                        <span class="result-value" id="resDiplotype"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Detected Variants:</span>
+                        <span class="result-value" id="resVariants"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Evidence Level:</span>
+                        <span class="result-value" id="resEvidenceLevel">CPIC Level A</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="collapsible-section" id="clinicalRecSection">
+            <div class="collapsible-header" onclick="toggleSection(this)">
+                <h3>Clinical Recommendation <span class="hint">(Click to expand)</span></h3>
+                <span class="collapsible-icon">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <div class="result-section">
+                    <div class="result-item">
+                        <span class="result-label">Action:</span>
+                        <span class="result-value" id="resAction"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Dose Adjustment:</span>
+                        <span class="result-value" id="resDose"></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Monitoring:</span>
+                        <span class="result-value" id="resMonitoring"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="collapsible-section" id="explanationSection">
+            <div class="collapsible-header" onclick="toggleSection(this)">
+                <h3>Explanation <span class="hint">(Click to expand)</span></h3>
+                <span class="collapsible-icon">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <div class="result-section">
+                    <div class="explanation-summary" id="resExplanationSummary"></div>
+                    <div class="explanation-full" id="resExplanationFull"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="collapsible-section json-section" id="jsonSection">
+            <div class="collapsible-header" onclick="toggleSection(this)">
+                <h3>Raw JSON Response <span class="hint">(Technical Details)</span></h3>
+                <span class="collapsible-icon">▼</span>
+            </div>
+            <div class="collapsible-content">
+                <pre class="json-output" id="resJson"></pre>
+                <div class="action-buttons" style="padding: 12px 16px; background: #eceff1;">
+                    <button type="button" class="action-btn btn-download" onclick="downloadJson()">Download
+                        JSON</button>
+                    <button type="button" class="action-btn btn-copy" onclick="copyToClipboard()" id="copyBtn">Copy to
+                        Clipboard</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-section" id="multiDrugSection" style="display: none;">
+            <h3>Multi-Drug Analysis Results</h3>
+            <div id="multiDrugResults"></div>
+        </div>
+
+        <div class="cpic-note">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L1 21h22L12 2zm0 3.99L19.53 19H4.47L12 5.99zM11 16h2v2h-2v-2zm0-6h2v4h-2v-4z" />
+            </svg>
+            Recommendations aligned with CPIC pharmacogenomic guidelines.
+        </div>
+
+        <div class="clinical-disclaimer">
+            This tool provides clinical decision support based on pharmacogenomic guidelines. Final prescribing
+            decisions must be made by qualified healthcare professionals.
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentJsonData = null;
+
+    function toggleSection(header) {
+        const section = header.parentElement;
+        section.classList.toggle('expanded');
+    }
+
+    function initializeCollapsibleSections() {
+        const sections = ['pgxProfileSection', 'clinicalRecSection', 'explanationSection', 'jsonSection'];
+        sections.forEach(id => {
+            const section = document.getElementById(id);
+            if (section) {
+                section.classList.remove('expanded');
+            }
+        });
+    }
+
+    function updateRiskSummaryBanner(riskLabel, severity, confidence, gene, phenotype) {
+        const banner = document.getElementById('riskSummaryBanner');
+        const label = document.getElementById('riskSummaryLabel');
+        const sevEl = document.getElementById('bannerSeverity');
+        const confEl = document.getElementById('bannerConfidence');
+        const confBar = document.getElementById('confidenceBar');
+        const contextRow = document.getElementById('riskContextRow');
+
+        banner.className = 'risk-summary-banner banner-' + riskLabel.toLowerCase().replace(' ', '');
+        label.innerHTML = getRiskIcon(riskLabel) + ' ' + riskLabel + ' RISK';
+
+        sevEl.textContent = severity.charAt(0).toUpperCase() + severity.slice(1);
+        sevEl.className = 'severity-' + severity;
+
+        const confValue = (confidence ?? 0).toFixed(2);
+        confEl.textContent = confValue;
+
+        if (gene || phenotype) {
+            contextRow.textContent = `Primary Gene: ${gene || 'N/A'} | Phenotype: ${phenotype || 'Unknown'}`;
+            contextRow.style.display = 'block';
+        } else {
+            contextRow.style.display = 'none';
+        }
+
+        confBar.className = 'confidence-bar bar-' + riskLabel.toLowerCase().replace(' ', '');
+        setTimeout(() => {
+            confBar.style.width = (confidence * 100) + '%';
+        }, 100);
+    }
+
+    function extractSummary(text) {
+        if (!text) return '';
+        const sentences = text.split(/[.!?]+/);
+        const summary = sentences.slice(0, 2).join('. ').trim();
+        return summary + (summary && !summary.endsWith('.') ? '.' : '');
+    }
+
+    function getRiskIcon(riskLabel) {
+        const safeIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>';
+        const adjustIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>';
+        const toxicIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>';
+        const unknownIcon = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>';
+
+        const label = riskLabel.toLowerCase();
+        if (label === 'safe') return safeIcon;
+        if (label === 'adjust dosage') return adjustIcon;
+        if (label === 'toxic' || label === 'ineffective') return toxicIcon;
+        return unknownIcon;
+    }
+
+    function displayResult(data) {
+        const resultContainer = document.getElementById('resultContainer');
+        resultContainer.style.display = 'block';
+        currentJsonData = data;
+        initializeCollapsibleSections();
+
+        document.getElementById('resPatientId').textContent = data.patient_id || 'N/A';
+        document.getElementById('resDrug').textContent = data.drug || 'N/A';
+        document.getElementById('resTimestamp').textContent = data.timestamp || 'N/A';
+
+        if (data.drug_analyses && data.drug_analyses.length > 0) {
+            displayMultiDrugResults(data);
+        } else {
+            displaySingleDrugResult(data);
+        }
+
+        document.getElementById('resJson').textContent = JSON.stringify(data, null, 2);
+    }
+
+    function displaySingleDrugResult(data) {
+        document.getElementById('multiDrugSection').style.display = 'none';
+        document.getElementById('pgxProfileSection').style.display = 'block';
+        document.getElementById('clinicalRecSection').style.display = 'block';
+        document.getElementById('explanationSection').style.display = 'block';
+        document.getElementById('jsonSection').style.display = 'block';
+
+        const riskLabel = data.risk_assessment?.risk_label || 'Unknown';
+        const severity = data.risk_assessment?.severity || 'none';
+        const confidence = data.risk_assessment?.confidence_score ?? 0;
+        const gene = data.pharmacogenomic_profile?.primary_gene || '';
+        const phenotype = data.pharmacogenomic_profile?.phenotype || '';
+
+        updateRiskSummaryBanner(riskLabel, severity, confidence, gene, phenotype);
+
+        document.getElementById('resGene').textContent =
+            data.pharmacogenomic_profile?.primary_gene || '';
+        document.getElementById('resPhenotype').textContent =
+            data.pharmacogenomic_profile?.phenotype || '';
+
+        const diplotype = data.pharmacogenomic_profile?.diplotype;
+        document.getElementById('resDiplotype').textContent = diplotype || '';
+
+        const variants = data.pharmacogenomic_profile?.detected_variants || [];
+        document.getElementById('resVariants').textContent =
+            variants.length > 0 ? variants.map(v => v.rsid).join(', ') : '';
+
+        document.getElementById('resAction').textContent =
+            data.clinical_recommendation?.action || '';
+        document.getElementById('resDose').textContent =
+            data.clinical_recommendation?.dose_adjustment || '';
+        document.getElementById('resMonitoring').textContent =
+            data.clinical_recommendation?.monitoring || '';
+
+        const fullExplanation = data.llm_generated_explanation?.summary || '';
+        document.getElementById('resExplanationSummary').textContent = 'Clinical Summary: ' + extractSummary(fullExplanation);
+        document.getElementById('resExplanationFull').textContent = fullExplanation;
+    }
+
+    function displayMultiDrugResults(data) {
+        const multiSection = document.getElementById('multiDrugSection');
+        const multiContainer = document.getElementById('multiDrugResults');
+        const pgxSection = document.getElementById('pgxProfileSection');
+        const clinicalSection = document.getElementById('clinicalRecSection');
+
+        multiSection.style.display = 'block';
+        pgxSection.style.display = 'none';
+        clinicalSection.style.display = 'none';
+
+        const riskLabel = data.risk_assessment?.risk_label || 'Unknown';
+        const severity = data.risk_assessment?.severity || 'none';
+        const confidence = data.risk_assessment?.confidence_score ?? 0;
+
+        updateRiskSummaryBanner(riskLabel, severity, confidence, '', '');
+
+        const fullExplanation = data.llm_generated_explanation?.summary || '';
+        document.getElementById('resExplanationSummary').textContent = 'Clinical Summary: ' + extractSummary(fullExplanation);
+        document.getElementById('resExplanationFull').textContent = fullExplanation;
+
+        let html = '';
+        data.drug_analyses.forEach((analysis, index) => {
+            const drugRiskLabel = analysis.risk_assessment?.risk_label || 'Unknown';
+            const drugSeverity = analysis.risk_assessment?.severity || 'none';
+            const diplotype = analysis.pharmacogenomic_profile?.diplotype;
+
+            let diplotypeHtml = '';
+            if (diplotype) {
+                diplotypeHtml = `
+                    <div class="result-item">
+                        <span class="result-label">Diplotype:</span>
+                        <span class="result-value">${diplotype}</span>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="drug-card">
+                    <h4>${analysis.drug}</h4>
+                    <div class="result-item">
+                        <span class="result-label">Gene:</span>
+                        <span class="result-value">${analysis.pharmacogenomic_profile?.primary_gene || ''}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Phenotype:</span>
+                        <span class="result-value">${analysis.pharmacogenomic_profile?.phenotype || ''}</span>
+                    </div>
+                    ${diplotypeHtml}
+                    <div class="result-item">
+                        <span class="result-label">Risk:</span>
+                        <span class="result-value"><span class="risk-badge risk-${drugRiskLabel.toLowerCase().replace(' ', '')}">${getRiskIcon(drugRiskLabel)} ${drugRiskLabel}</span></span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Severity:</span>
+                        <span class="result-value severity-${drugSeverity}">${drugSeverity.charAt(0).toUpperCase() + drugSeverity.slice(1)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Confidence:</span>
+                        <span class="result-value">${(analysis.risk_assessment?.confidence_score ?? 0).toFixed(2)}</span>
+                    </div>
+                    <div class="result-item">
+                        <span class="result-label">Action:</span>
+                        <span class="result-value">${analysis.clinical_recommendation?.action || ''}</span>
+                    </div>
+                    <div class="result-item" style="margin-top: 10px;">
+                        <span class="result-label">Explanation:</span>
+                        <span class="result-value">${analysis.llm_generated_explanation?.summary || ''}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        multiContainer.innerHTML = html;
+    }
+
+    function downloadJson() {
+        if (!currentJsonData) return;
+
+        const blob = new Blob([JSON.stringify(currentJsonData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'pharmacogenomics_result.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('JSON downloaded successfully');
+    }
+
+    function copyToClipboard() {
+        if (!currentJsonData) return;
+
+        const jsonString = JSON.stringify(currentJsonData, null, 2);
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(jsonString).then(() => {
+                const btn = document.getElementById('copyBtn');
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                showToast('Copied to clipboard');
+
+                setTimeout(() => {
+                    btn.textContent = 'Copy to Clipboard';
+                    btn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                fallbackCopy(jsonString);
+            });
+        } else {
+            fallbackCopy(jsonString);
+        }
+    }
+
+    function fallbackCopy(text) {
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+            document.execCommand('copy');
+            const btn = document.getElementById('copyBtn');
+            btn.textContent = 'Copied!';
+            btn.classList.add('copied');
+            showToast('Copied to clipboard');
+
+            setTimeout(() => {
+                btn.textContent = 'Copy to Clipboard';
+                btn.classList.remove('copied');
+            }, 2000);
+        } catch (err) {
+            showToast('Failed to copy');
+        }
+
+        document.body.removeChild(textArea);
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        setTimeout(() => toast.classList.add('show'), 10);
+
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => document.body.removeChild(toast), 300);
+        }, 3000);
+    }
+
+    // Auto-run analysis display
+    {% if saved_report %}
+    (function () {
+        const savedData = {{ saved_report | tojson
+    }};
+    const loading = document.getElementById('loading');
+    if (loading) loading.classList.remove('active');
+    displayResult(savedData);
+    }) ();
+    {% endif %}
+</script>
+{% endblock %}

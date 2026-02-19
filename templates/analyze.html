@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}New Analysis - Pharmacogenomics Analysis{% endblock %}
+
+{% block extra_css %}
+<style>
+    .analyze-header {
+        background: var(--header-gradient);
+        color: white;
+        padding: 30px;
+        text-align: center;
+    }
+    
+    .analyze-header h1 {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+    
+    .analyze-header .subtitle {
+        opacity: 0.95;
+        font-size: 15px;
+    }
+    
+    .analyze-header .clinical-positioning {
+        font-size: 13px;
+        opacity: 0.85;
+        margin-bottom: 16px;
+        font-style: italic;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analyze-header">
+    <h1>New Pharmacogenomic Analysis</h1>
+    <p class="subtitle">Clinical decision support for drug-gene interaction assessment</p>
+    <p class="clinical-positioning">Designed for pharmacogenomic decision support in clinical and research settings.</p>
+</div>
+
+<div class="form-container">
+    {% if error %}
+    <div class="error-message">{{ error }}</div>
+    {% endif %}
+    
+    <form id="analysisForm" method="POST" action="{{ url_for('do_analysis') }}" enctype="multipart/form-data">
+        <div class="form-card">
+            <div class="form-card-header">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                <h3>Patient Identification</h3>
+            </div>
+            <div class="form-group">
+                <label for="patient_id">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    Patient ID
+                </label>
+                <input type="text" id="patient_id" name="patient_id" placeholder="Enter patient ID (e.g., P12345)" required>
+            </div>
+        </div>
+        
+        <div class="form-card">
+            <div class="form-card-header">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                <h3>Drug Selection</h3>
+            </div>
+            <div class="form-group">
+                <label for="drug_input">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.02 5.01L4 17c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2h-1V3c0-1.1-.9-2-2-2H6.02C4.77 1 3.66 2.01 3.66 3.23v.85c0 1.1.9 2 2 2H4zm2 2h8v2H6V7zm10 0h2v10h-2V7z"/></svg>
+                    Drug(s)
+                </label>
+                <input type="text" id="drug_input" name="drug_input" placeholder="Enter drug(s), comma-separated (e.g., CODEINE, WARFARIN)" required style="text-transform: uppercase;">
+                <small>Supported: CODEINE, WARFARIN, CLOPIDOGREL, SIMVASTATIN, AZATHIOPRINE, FLUOROURACIL</small>
+                <small>Enter multiple drugs separated by commas.</small>
+            </div>
+        </div>
+        
+        <div class="form-card">
+            <div class="form-card-header">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+                <h3>VCF File Upload</h3>
+            </div>
+            <div class="form-group">
+                <label>Upload VCF File (Max 5MB)</label>
+                <div class="file-upload" id="fileUpload" onclick="document.getElementById('vcf_file').click()">
+                    <input type="file" id="vcf_file" name="vcf_file" accept=".vcf" required>
+                    <span class="file-upload-label">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+                        Click to upload VCF file
+                    </span>
+                    <div class="file-name" id="fileName"></div>
+                    <div class="file-validation-success" id="fileValidationSuccess" style="display:none">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                        File valid and ready
+                    </div>
+                    <div class="file-size" id="fileSize"></div>
+                </div>
+            </div>
+        </div>
+        
+        <button type="submit" class="submit-btn" id="submitBtn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+            Analyze Pharmacogenomics
+        </button>
+    </form>
+</div>
+
+<div class="clinical-disclaimer">
+    This tool provides clinical decision support based on pharmacogenomic guidelines. Final prescribing decisions must be made by qualified healthcare professionals.
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const MAX_FILE_SIZE = 5 * 1024 * 1024;
+    
+    const fileInput = document.getElementById('vcf_file');
+    const fileName = document.getElementById('fileName');
+    const fileSizeEl = document.getElementById('fileSize');
+    const submitBtn = document.getElementById('submitBtn');
+    const fileUpload = document.getElementById('fileUpload');
+    const fileValidationSuccess = document.getElementById('fileValidationSuccess');
+    
+    function formatFileSize(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+    
+    if (fileUpload) {
+        fileUpload.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        fileUpload.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+        
+        fileUpload.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                const event = new Event('change');
+                fileInput.dispatchEvent(event);
+            }
+        });
+    }
+    
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                fileName.textContent = file.name;
+                
+                const size = file.size;
+                fileSizeEl.textContent = 'Size: ' + formatFileSize(size);
+                
+                if (size > MAX_FILE_SIZE) {
+                    fileSizeEl.className = 'file-size error';
+                    fileSizeEl.textContent += ' - File too large! Maximum is 5MB.';
+                    submitBtn.disabled = true;
+                    fileUpload.classList.remove('valid');
+                    fileValidationSuccess.style.display = 'none';
+                } else if (size > MAX_FILE_SIZE * 0.8) {
+                    fileSizeEl.className = 'file-size warning';
+                    fileSizeEl.textContent += ' - Approaching size limit';
+                    submitBtn.disabled = false;
+                    fileUpload.classList.add('valid');
+                    fileValidationSuccess.style.display = 'flex';
+                } else {
+                    fileSizeEl.className = 'file-size';
+                    submitBtn.disabled = false;
+                    fileUpload.classList.add('valid');
+                    fileValidationSuccess.style.display = 'flex';
+                }
+            } else {
+                fileName.textContent = '';
+                fileSizeEl.textContent = '';
+                submitBtn.disabled = false;
+                fileUpload.classList.remove('valid');
+                fileValidationSuccess.style.display = 'none';
+            }
+        });
+    }
+    
+    const drugInput = document.getElementById('drug_input');
+    if (drugInput) {
+        drugInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+</script>
+{% endblock %}

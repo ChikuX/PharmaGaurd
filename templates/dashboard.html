@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Pharmacogenomics Analysis{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-content {
+        padding: 32px;
+    }
+    
+    .welcome-header {
+        margin-bottom: 32px;
+    }
+    
+    .welcome-header h1 {
+        font-size: 24px;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+    }
+    
+    .stats-row {
+        margin-bottom: 32px;
+    }
+    
+    .action-card {
+        margin-bottom: 32px;
+    }
+    
+    .recent-reports h2 {
+        font-size: 18px;
+        color: var(--text-primary);
+        margin-bottom: 16px;
+    }
+    
+    @media (max-width: 600px) {
+        .dashboard-content {
+            padding: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-content">
+    <div class="welcome-header">
+        <h1>Welcome, {{ user.name or user.email }}</h1>
+        <div class="user-meta">
+            <span class="role-badge {{ user.role }}">{{ 'Clinician' if user.role == 'clinician' else 'Researcher' }}</span>
+            <span class="total-analyses">{{ total_scans }} analyses performed</span>
+        </div>
+    </div>
+    
+    <div class="stats-row">
+        <div class="stat-card">
+            <h3>{{ total_scans }}</h3>
+            <p>Total Analyses</p>
+        </div>
+    </div>
+    
+    <div class="action-card">
+        <h2>Start New Analysis</h2>
+        <a href="{{ url_for('analyze_page') }}" class="new-analysis-btn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            New Analysis
+        </a>
+    </div>
+    
+    <div class="recent-reports">
+        <h2>Recent Analyses</h2>
+        
+        {% if scans %}
+        <div class="reports-list">
+            {% for scan in scans %}
+            <div class="report-item">
+                <div class="report-info">
+                    <span class="report-patient">{{ scan.patient_id }}</span>
+                    <span class="report-drugs">{{ scan.drugs }}</span>
+                </div>
+                <div class="report-meta">
+                    <span class="report-date">{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <span class="risk-badge {{ scan.get('overall_risk_label', 'Unknown')|lower|replace(' ', '') }}">{{ scan.get('overall_risk_label', 'Unknown') }}</span>
+                    <a href="{{ url_for('view_scan', scan_id=scan._id) }}" class="view-btn">View</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+            <p>No analyses yet. Start your first analysis above.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

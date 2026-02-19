@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Pharmacogenomics Analysis{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+    {% block body_start %}{% endblock %}
+
+    <div class="container">
+        {% block navbar %}
+        <nav class="navbar">
+            <a href="{{ url_for('dashboard') }}" class="navbar-brand">Pharmacogenomics Analysis</a>
+            <div class="navbar-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('history') }}">History</a>
+                <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5z" />
+                    </svg>
+                    <svg class="moon-icon" style="display:none" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z" />
+                    </svg>
+                </button>
+            </div>
+        </nav>
+        {% endblock %}
+
+        {% if current_user.is_authenticated and current_user.role == 'researcher' %}
+        <div class="research-banner">
+            <p><strong>Research Use Only</strong> — This analysis is for research purposes. Not for clinical
+                decision-making.</p>
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block footer %}{% endblock %}
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            if (newTheme === 'dark') {
+                html.setAttribute('data-theme', 'dark');
+            } else {
+                html.removeAttribute('data-theme');
+            }
+
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleUI(newTheme);
+        }
+
+        function updateThemeToggleUI(theme) {
+            const toggle = document.getElementById('themeToggle');
+            if (!toggle) return;
+
+            const sunIcon = toggle.querySelector('.sun-icon');
+            const moonIcon = toggle.querySelector('.moon-icon');
+
+            if (theme === 'dark') {
+                sunIcon.style.display = 'none';
+                moonIcon.style.display = 'block';
+            } else {
+                sunIcon.style.display = 'block';
+                moonIcon.style.display = 'none';
+            }
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+            updateThemeToggleUI(savedTheme);
+        }
+
+        initTheme();
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}History - Pharmacogenomics Analysis{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-content {
+        padding: 32px;
+    }
+    
+    .page-header {
+        margin-bottom: 24px;
+    }
+    
+    .page-header h1 {
+        font-size: 24px;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+    
+    .page-header p {
+        color: var(--text-muted);
+        font-size: 14px;
+    }
+    
+    .filters {
+        background: var(--card-bg-alt);
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 24px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .filters form {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    
+    .filter-group {
+        flex: 1;
+        min-width: 150px;
+    }
+    
+    .filter-group label {
+        display: block;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+    }
+    
+    .filter-group input,
+    .filter-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 14px;
+        background: var(--card-bg);
+        color: var(--text-primary);
+    }
+    
+    .filter-group input:focus,
+    .filter-group select:focus {
+        outline: none;
+        border-color: var(--accent);
+    }
+    
+    .filter-btn {
+        align-self: flex-end;
+        padding: 10px 20px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .filter-btn:hover {
+        opacity: 0.9;
+    }
+    
+    .reports-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .reports-table th,
+    .reports-table td {
+        padding: 14px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+    }
+    
+    .reports-table th {
+        background: var(--card-bg-alt);
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .reports-table td {
+        font-size: 14px;
+        color: var(--text-primary);
+    }
+    
+    .reports-table tbody tr:hover {
+        background: var(--card-bg-alt);
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 24px;
+    }
+    
+    .pagination a,
+    .pagination span {
+        padding: 8px 14px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 13px;
+        color: var(--text-secondary);
+        text-decoration: none;
+    }
+    
+    .pagination a:hover {
+        background: var(--card-bg-alt);
+    }
+    
+    .pagination .current {
+        background: var(--accent);
+        color: white;
+        border-color: var(--accent);
+    }
+    
+    @media (max-width: 600px) {
+        .history-content {
+            padding: 20px;
+        }
+        
+        .filters form {
+            flex-direction: column;
+        }
+        
+        .filter-group {
+            width: 100%;
+        }
+        
+        .filter-btn {
+            width: 100%;
+        }
+        
+        .reports-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-content">
+    <div class="page-header">
+        <h1>Analysis History</h1>
+        <p>View and manage all pharmacogenomic analyses</p>
+    </div>
+    
+    <div class="filters">
+        <form method="GET" action="{{ url_for('history') }}">
+            <div class="filter-group">
+                <label for="patient_id">Patient ID</label>
+                <input type="text" id="patient_id" name="patient_id" value="{{ patient_filter }}" placeholder="Search patient...">
+            </div>
+            <div class="filter-group">
+                <label for="risk">Risk Level</label>
+                <select id="risk" name="risk">
+                    <option value="">All Risks</option>
+                    <option value="Safe" {% if risk_filter == 'Safe' %}selected{% endif %}>Safe</option>
+                    <option value="Adjust Dosage" {% if risk_filter == 'Adjust Dosage' %}selected{% endif %}>Adjust Dosage</option>
+                    <option value="Toxic" {% if risk_filter == 'Toxic' %}selected{% endif %}>Toxic</option>
+                    <option value="Ineffective" {% if risk_filter == 'Ineffective' %}selected{% endif %}>Ineffective</option>
+                    <option value="Unknown" {% if risk_filter == 'Unknown' %}selected{% endif %}>Unknown</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="drug">Drug</label>
+                <input type="text" id="drug" name="drug" value="{{ drug_filter }}" placeholder="Search drug...">
+            </div>
+            <button type="submit" class="filter-btn">Filter</button>
+        </form>
+    </div>
+    
+    {% if scans %}
+    <table class="reports-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Patient ID</th>
+                <th>Drug(s)</th>
+                <th>Risk</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for scan in scans %}
+            <tr>
+                <td>{{ scan.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>{{ scan.patient_id }}</td>
+                <td>{{ scan.drugs }}</td>
+                <td><span class="risk-badge {{ scan.get('overall_risk_label', 'Unknown')|lower|replace(' ', '') }}">{{ scan.get('overall_risk_label', 'Unknown') }}</span></td>
+                <td><a href="{{ url_for('view_scan', scan_id=scan._id) }}" class="view-btn">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    {% if total_pages > 1 %}
+    <div class="pagination">
+        {% if page > 1 %}
+        <a href="{{ url_for('history', page=page-1, patient_id=patient_filter, risk=risk_filter, drug=drug_filter) }}">&laquo; Previous</a>
+        {% endif %}
+        
+        {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}
+            <span class="current">{{ p }}</span>
+            {% elif p <= 3 or p > total_pages - 3 or (p >= page - 1 and p <= page + 1) %}
+            <a href="{{ url_for('history', page=p, patient_id=patient_filter, risk=risk_filter, drug=drug_filter) }}">{{ p }}</a>
+            {% elif p == 4 or p == total_pages - 3 %}
+            <span>...</span>
+            {% endif %}
+        {% endfor %}
+        
+        {% if page < total_pages %}
+        <a href="{{ url_for('history', page=page+1, patient_id=patient_filter, risk=risk_filter, drug=drug_filter) }}">Next &raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+        <p>No reports found. Run your first analysis from the dashboard.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
